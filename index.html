@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>12-Week Workout Tracker</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-2: #eef3f7;
+      --text: #15202b;
+      --muted: #637083;
+      --border: #d9e0e8;
+      --accent: #0f766e;
+      --accent-2: #14b8a6;
+      --good: #15803d;
+      --warn: #b45309;
+      --danger: #b91c1c;
+      --shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1220;
+        --panel: #121c2d;
+        --panel-2: #182438;
+        --text: #edf4ff;
+        --muted: #a8b4c7;
+        --border: #293750;
+        --accent: #2dd4bf;
+        --accent-2: #5eead4;
+        --good: #4ade80;
+        --warn: #fbbf24;
+        --danger: #fb7185;
+        --shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    header {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 6px; font-size: clamp(1.55rem, 4vw, 2.25rem); }
+    h2 { font-size: 1.2rem; margin-bottom: 10px; }
+    h3 { font-size: 1rem; margin-bottom: 8px; }
+    .subtle { color: var(--muted); }
+    .tiny { font-size: 0.78rem; }
+    .small { font-size: 0.9rem; }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 13px;
+      font-weight: 700;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn.primary {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+    .btn.danger { color: var(--danger); }
+    .btn.ghost { background: transparent; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .metric strong {
+      display: block;
+      font-size: 1.7rem;
+      line-height: 1.1;
+      margin-top: 3px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--panel-2);
+      overflow: hidden;
+      margin-top: 9px;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border-radius: inherit;
+      transition: width 180ms ease;
+    }
+
+    nav.tabs {
+      display: flex;
+      gap: 8px;
+      margin: 18px 0;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab {
+      flex: 0 0 auto;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 9px 14px;
+      font-weight: 800;
+    }
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .week-top {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    .week-select-wrap label,
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+      font-weight: 700;
+    }
+
+    select, input[type="number"], input[type="text"], textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 9px 10px;
+    }
+    textarea { min-height: 72px; resize: vertical; }
+
+    .phase-banner {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+      border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+    }
+
+    .workout-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .workout-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--panel);
+    }
+    .workout-head {
+      padding: 14px;
+      background: var(--panel-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .workout-head-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+    .badge.good {
+      background: color-mix(in srgb, var(--good) 14%, var(--panel));
+      color: var(--good);
+    }
+    .badge.warn {
+      background: color-mix(in srgb, var(--warn) 14%, var(--panel));
+      color: var(--warn);
+    }
+
+    .session-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .session-check input { width: 20px; height: 20px; }
+
+    .exercise-list { padding: 8px 12px 12px; }
+    .exercise-row {
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    .exercise-row:last-child { border-bottom: none; }
+    .exercise-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 7px;
+      align-items: center;
+    }
+    .exercise-title strong { font-size: 0.93rem; }
+    .tag {
+      font-size: 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 7px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .tag.core { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+
+    .exercise-fields {
+      display: grid;
+      grid-template-columns: 0.8fr 1fr 1fr;
+      gap: 7px;
+    }
+    .exercise-fields .field label { font-size: 0.7rem; margin-bottom: 3px; }
+    .exercise-fields input { padding: 7px 8px; }
+
+    .session-notes { padding: 0 12px 12px; }
+
+    .week-strip {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(46px, 1fr));
+      gap: 7px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+    .week-cell {
+      min-width: 46px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 5px;
+      text-align: center;
+      background: var(--panel);
+    }
+    .week-cell button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+    .week-cell.current { outline: 2px solid var(--accent); }
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+      margin-top: 6px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+    .dot.done { background: var(--good); }
+
+    .progress-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 14px;
+    }
+    .chart-wrap {
+      width: 100%;
+      min-height: 260px;
+      display: grid;
+      place-items: center;
+    }
+    svg { width: 100%; height: auto; }
+    .chart-empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+    }
+
+    .record-list {
+      display: grid;
+      gap: 8px;
+    }
+    .record {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--panel-2);
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+      margin-bottom: 14px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 900px) {
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .workout-grid { grid-template-columns: 1fr; }
+      .progress-layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .app { padding: 12px; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .metric { padding: 11px; }
+      .metric strong { font-size: 1.35rem; }
+      .week-top { grid-template-columns: 1fr; align-items: stretch; }
+      .settings-grid { grid-template-columns: 1fr; }
+      .exercise-fields { grid-template-columns: 0.7fr 1fr 1fr; }
+      .btn { padding: 9px 11px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="title-row">
+        <div>
+          <h1>12-Week Momentum Tracker</h1>
+          <p class="subtle">Three workouts a week, built around your rotating long/short work weeks.</p>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="exportJsonBtn" type="button">Backup JSON</button>
+          <button class="btn" id="exportCsvBtn" type="button">Export CSV</button>
+          <label class="btn" for="importFile">Import backup</label>
+          <input class="hidden" id="importFile" type="file" accept="application/json" />
+        </div>
+      </div>
+
+      <section class="summary-grid" aria-label="Progress summary">
+        <div class="metric">
+          <span class="small subtle">Total sessions</span>
+          <strong id="totalSessions">0 / 36</strong>
+          <div class="progress-track"><div class="progress-fill" id="totalProgress"></div></div>
+        </div>
+        <div class="metric">
+          <span class="small subtle">Current streak</span>
+          <strong id="streakValue">0 weeks</strong>
+          <span class="tiny subtle">Perfect weeks in a row</span>
+        </div>
+        <div class="metric">
+          <span class="small subtle">Current week</span>
+          <strong id="currentWeekValue">Week 1</strong>
+          <span class="tiny subtle" id="currentWeekDates"></span>
+        </div>
+        <div class="metric">
+          <span class="small subtle">Wager status</span>
+          <strong id="wagerStatus">In play</strong>
+          <span class="tiny subtle">Three completed sessions keeps the point.</span>
+        </div>
+      </section>
+    </header>
+
+    <nav class="tabs" aria-label="Tracker sections">
+      <button class="tab active" data-view="plan" type="button">Weekly plan</button>
+      <button class="tab" data-view="overview" type="button">12-week map</button>
+      <button class="tab" data-view="progress" type="button">Progress</button>
+      <button class="tab" data-view="settings" type="button">Plan notes</button>
+    </nav>
+
+    <section class="view active" id="view-plan">
+      <div class="week-top">
+        <div class="week-select-wrap">
+          <label for="weekSelect">Choose week</label>
+          <select id="weekSelect"></select>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="prevWeekBtn" type="button">← Previous</button>
+          <button class="btn" id="nextWeekBtn" type="button">Next →</button>
+        </div>
+      </div>
+
+      <div class="phase-banner" id="phaseBanner"></div>
+      <div class="workout-grid" id="workoutGrid"></div>
+    </section>
+
+    <section class="view" id="view-overview">
+      <div class="card">
+        <h2>12-week completion map</h2>
+        <p class="small subtle">Each dot is one workout. Tap a week to open it.</p>
+        <div class="week-strip" id="weekStrip"></div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h2>How the schedule rotates</h2>
+        <div class="settings-grid">
+          <div class="callout">
+            <strong>Long work week</strong>
+            <div class="small">Work Mon–Tue and Fri–Sun.</div>
+            <div class="small">Train Monday, Wednesday, Thursday.</div>
+          </div>
+          <div class="callout">
+            <strong>Short work week</strong>
+            <div class="small">Work Wednesday–Thursday.</div>
+            <div class="small">Train Monday, Tuesday, Friday.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-progress">
+      <div class="progress-layout">
+        <div class="card">
+          <div class="field" style="max-width:360px; margin-bottom:12px;">
+            <label for="chartExercise">Visualize top logged weight</label>
+            <select id="chartExercise"></select>
+          </div>
+          <div class="chart-wrap" id="chartWrap" aria-live="polite"></div>
+        </div>
+        <div class="card">
+          <h2>Best logged weights</h2>
+          <div class="record-list" id="recordList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-settings">
+      <div class="settings-grid">
+        <div class="card">
+          <h2>Progression rules</h2>
+          <div class="callout small">
+            When you hit the top of the target rep range with clean form on every set, add the smallest available weight next time.
+          </div>
+          <ul class="small">
+            <li>Leave roughly 2 good reps in reserve on most strength sets.</li>
+            <li>Do not increase running intensity and loaded-walking weight in the same week.</li>
+            <li>Use the minimum session on rough workdays rather than losing the third day.</li>
+            <li>Do not run in the weighted vest or backpack.</li>
+            <li>Skip the elevation mask; it is not part of this plan.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Minimum-session rule</h2>
+          <p class="small">A workout can still count on a bad day when you complete:</p>
+          <ul class="small">
+            <li>10-minute warm-up</li>
+            <li>Three core exercises</li>
+            <li>Five-minute cooldown</li>
+          </ul>
+          <p class="small subtle">Mark the workout complete and note “minimum session.” Consistency beats a perfect plan you stop using.</p>
+        </div>
+        <div class="card">
+          <h2>Recovery checks</h2>
+          <ul class="small">
+            <li>Persistent joint pain: reduce impact or load.</li>
+            <li>Dizziness, unusual weakness, or racing heart: stop and recover.</li>
+            <li>Work performance dropping for multiple shifts: hold progression for one week.</li>
+            <li>Hydration, sodium, and protein matter more during early keto adaptation.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Data controls</h2>
+          <p class="small subtle">Your entries stay in this browser on this device. Export a backup before moving the file or clearing browser data.</p>
+          <button class="btn danger" id="resetBtn" type="button">Reset all entries</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'notsoworkout12-v1';
+    const START_DATE = new Date('2026-07-27T12:00:00');
+
+    const day1Exercises = [
+      { name: 'Seated leg press', sets: 3, target: '8–12', core: true },
+      { name: 'Machine chest press', sets: 3, target: '8–12', core: true },
+      { name: 'Lat pulldown', sets: 3, target: '8–12', core: true },
+      { name: 'Seated row', sets: 3, target: '8–12', core: true },
+      { name: 'Machine shoulder press', sets: 2, target: '8–12', core: false },
+      { name: 'Calf raises', sets: 3, target: '12–15', core: false },
+      { name: 'Pallof press', sets: 2, target: '10/side', core: false }
+    ];
+
+    const day2Exercises = [
+      { name: 'Smith hip thrust / glute bridge', sets: 3, target: '8–12', core: true },
+      { name: 'Smith reverse lunge', sets: 2, target: '8/leg', core: true },
+      { name: 'Seated hamstring curl', sets: 3, target: '10–12', core: true },
+      { name: 'Seated leg press', sets: 2, target: '10', core: false },
+      { name: 'Machine chest press', sets: 2, target: '8–12', core: false },
+      { name: 'Lat pulldown', sets: 2, target: '8–12', core: false },
+      { name: 'Hip abduction machine', sets: 2, target: '12–15', core: false }
+    ];
+
+    const day3Exercises = [
+      { name: 'Run-walk / easy run', sets: 1, target: 'See phase', core: true, cardio: true },
+      { name: 'Step-ups', sets: 2, target: '8/leg', core: true },
+      { name: 'Calf raises', sets: 3, target: '15', core: true },
+      { name: 'Pallof press', sets: 2, target: '10/side', core: false },
+      { name: 'Incline walk / loaded walk', sets: 1, target: 'See phase', core: false, cardio: true }
+    ];
+
+    const phaseData = [
+      {
+        weeks: [1, 2],
+        title: 'Foundation + keto adaptation',
+        cardio: 'Two easy run-walk exposures: 1 minute run / 2 minutes walk for 20–30 minutes.',
+        load: 'No weighted vest yet. Keep Day 3 incline walking unweighted.'
+      },
+      {
+        weeks: [3, 4],
+        title: 'Build the base',
+        cardio: 'Progress toward 90 sec run / 90 sec walk or 2 minutes run / 1 minute walk.',
+        load: 'Vest once weekly: 8–10 lb for 15–20 minutes of walking only.'
+      },
+      {
+        weeks: [5, 6],
+        title: 'Add controlled output',
+        cardio: 'One easy 25–35 minute session; one interval exposure of 2 minutes moderate / 2 minutes easy × 4.',
+        load: 'Vest 10–15 lb for 20–30 minutes. Increase duration or weight, not both.'
+      },
+      {
+        weeks: [7, 8],
+        title: 'Backpacking transition',
+        cardio: 'Easy run 30–40 minutes; intervals 2–3 minutes moderate / 2 minutes easy × 4–5.',
+        load: 'Replace some vest work with the real backpack at 15–20 lb, progressing toward 20–25 lb.'
+      },
+      {
+        weeks: [9, 10],
+        title: 'Specific strength and output',
+        cardio: 'Easy run 35–45 minutes; intervals 3 minutes moderate / 2 minutes easy × 5 when recovery is good.',
+        load: 'Backpack walking 20–30 lb for 30–45 minutes on hills or incline.'
+      },
+      {
+        weeks: [11],
+        title: 'Peak practice week',
+        cardio: 'Hold running volume steady. Do not chase speed and pack load in the same week.',
+        load: 'One controlled hike or incline session near intended trip load, without grinding.'
+      },
+      {
+        weeks: [12],
+        title: 'Consolidate and test',
+        cardio: 'Reduce total cardio volume about 20–30%, then perform one comfortable benchmark session.',
+        load: 'Use moderate pack weight only. Finish the block feeling capable, not wrecked.'
+      }
+    ];
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function isoDate(date) {
+      return date.toISOString().slice(0, 10);
+    }
+
+    function formatDate(date, options = { month: 'short', day: 'numeric' }) {
+      return new Intl.DateTimeFormat('en-US', options).format(date);
+    }
+
+    function makeWorkout(weekNumber, slot, date, type) {
+      const definitions = {
+        day1: {
+          name: 'Day 1 — Full Body + Easy Cardio',
+          intensity: 'Moderate',
+          description: 'Build total-body strength without emptying the tank.',
+          exercises: day1Exercises
+        },
+        day2: {
+          name: 'Day 2 — Main Lower-Body Strength',
+          intensity: 'Hardest day',
+          description: 'Glutes, hamstrings, legs, and climbing strength.',
+          exercises: day2Exercises
+        },
+        day3: {
+          name: 'Day 3 — Running + Backpacking',
+          intensity: 'Light–moderate',
+          description: 'Cardio, step strength, and gradual loaded walking.',
+          exercises: day3Exercises
+        }
+      };
+      const def = definitions[type];
+      return {
+        id: `w${weekNumber}-${slot}`,
+        week: weekNumber,
+        slot,
+        date: isoDate(date),
+        type,
+        ...def
+      };
+    }
+
+    function buildPlan() {
+      const weeks = [];
+      for (let i = 0; i < 12; i++) {
+        const weekNumber = i + 1;
+        const start = addDays(START_DATE, i * 7);
+        const longWeek = i % 2 === 0;
+        const offsets = longWeek ? [0, 2, 3] : [0, 1, 4];
+        weeks.push({
+          number: weekNumber,
+          start: isoDate(start),
+          end: isoDate(addDays(start, 6)),
+          workPattern: longWeek ? 'Long work week' : 'Short work week',
+          workouts: [
+            makeWorkout(weekNumber, 1, addDays(start, offsets[0]), 'day1'),
+            makeWorkout(weekNumber, 2, addDays(start, offsets[1]), 'day2'),
+            makeWorkout(weekNumber, 3, addDays(start, offsets[2]), 'day3')
+          ]
+        });
+      }
+      return weeks;
+    }
+
+    const plan = buildPlan();
+
+    function blankState() {
+      const entries = {};
+      for (const week of plan) {
+        for (const workout of week.workouts) {
+          entries[workout.id] = {
+            completed: false,
+            notes: '',
+            exercises: workout.exercises.map(ex => ({
+              name: ex.name,
+              sets: ex.sets,
+              weight: '',
+              reps: ''
+            }))
+          };
+        }
+      }
+
+      // Known completed baseline from Monday, July 27, 2026.
+      const baseline = entries['w1-1'];
+      baseline.completed = true;
+      baseline.notes = 'Completed baseline session. Warm-up: 10 min at 3.4 mph and 1% incline. Cooldown: flat at 3 mph. Reported roughly 10–11 reps per set.';
+      const baselineWeights = {
+        'Seated leg press': { weight: 250, reps: 10 },
+        'Machine chest press': { weight: 80, reps: 10 },
+        'Lat pulldown': { weight: 80, reps: 10 },
+        'Seated row': { weight: 80, reps: 10 }
+      };
+      baseline.exercises.forEach(ex => {
+        if (baselineWeights[ex.name]) {
+          ex.weight = baselineWeights[ex.name].weight;
+          ex.reps = baselineWeights[ex.name].reps;
+        }
+      });
+
+      return { selectedWeek: 1, entries };
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return blankState();
+      try {
+        const parsed = JSON.parse(raw);
+        const fresh = blankState();
+        fresh.selectedWeek = parsed.selectedWeek || 1;
+        for (const key of Object.keys(fresh.entries)) {
+          if (parsed.entries && parsed.entries[key]) {
+            fresh.entries[key] = {
+              ...fresh.entries[key],
+              ...parsed.entries[key],
+              exercises: fresh.entries[key].exercises.map((ex, index) => ({
+                ...ex,
+                ...(parsed.entries[key].exercises?.[index] || {})
+              }))
+            };
+          }
+        }
+        return fresh;
+      } catch (error) {
+        return blankState();
+      }
+    }
+
+    let state = loadState();
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      refreshSummary();
+      renderWeekStrip();
+      renderProgress();
+    }
+
+    function phaseForWeek(weekNumber) {
+      return phaseData.find(phase => phase.weeks.includes(weekNumber));
+    }
+
+    function renderWeekSelect() {
+      const select = document.getElementById('weekSelect');
+      select.innerHTML = plan.map(week => {
+        const start = new Date(`${week.start}T12:00:00`);
+        const end = new Date(`${week.end}T12:00:00`);
+        return `<option value="${week.number}">Week ${week.number} · ${formatDate(start)}–${formatDate(end)} · ${week.workPattern}</option>`;
+      }).join('');
+      select.value = String(state.selectedWeek);
+    }
+
+    function renderSelectedWeek() {
+      const week = plan[state.selectedWeek - 1];
+      const phase = phaseForWeek(week.number);
+      document.getElementById('phaseBanner').innerHTML = `
+        <strong>Week ${week.number}: ${phase.title}</strong>
+        <div class="small" style="margin-top:5px;"><b>Cardio:</b> ${phase.cardio}</div>
+        <div class="small" style="margin-top:3px;"><b>Loaded work:</b> ${phase.load}</div>
+      `;
+
+      const grid = document.getElementById('workoutGrid');
+      grid.innerHTML = week.workouts.map(workout => renderWorkoutCard(workout)).join('');
+      bindWorkoutEvents();
+      renderWeekSelect();
+      refreshSummary();
+    }
+
+    function renderWorkoutCard(workout) {
+      const entry = state.entries[workout.id];
+      const date = new Date(`${workout.date}T12:00:00`);
+      const dayName = formatDate(date, { weekday: 'long' });
+      const exerciseRows = workout.exercises.map((exercise, index) => {
+        const logged = entry.exercises[index] || {};
+        const weightLabel = exercise.cardio ? 'Minutes' : 'Weight (lb)';
+        return `
+          <div class="exercise-row">
+            <div class="exercise-title">
+              <strong>${exercise.name}</strong>
+              <span class="tag ${exercise.core ? 'core' : ''}">${exercise.core ? 'Core' : 'Bonus'} · ${exercise.target}</span>
+            </div>
+            <div class="exercise-fields">
+              <div class="field">
+                <label>Sets</label>
+                <input type="number" min="0" step="1" data-workout="${workout.id}" data-index="${index}" data-field="sets" value="${escapeAttr(logged.sets)}" />
+              </div>
+              <div class="field">
+                <label>${weightLabel}</label>
+                <input type="number" min="0" step="0.5" data-workout="${workout.id}" data-index="${index}" data-field="weight" value="${escapeAttr(logged.weight)}" />
+              </div>
+              <div class="field">
+                <label>${exercise.cardio ? 'Pattern / pace' : 'Reps / set'}</label>
+                <input type="text" data-workout="${workout.id}" data-index="${index}" data-field="reps" value="${escapeAttr(logged.reps)}" placeholder="${exercise.cardio ? 'e.g. 1:2' : 'e.g. 10'}" />
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <article class="workout-card">
+          <div class="workout-head">
+            <div class="workout-head-top">
+              <div>
+                <span class="badge">${workout.intensity}</span>
+                <h3 style="margin-top:8px;">${workout.name}</h3>
+                <div class="small subtle">${dayName}, ${formatDate(date, { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+              </div>
+              <span class="badge ${entry.completed ? 'good' : 'warn'}">${entry.completed ? 'Done' : 'Planned'}</span>
+            </div>
+            <p class="small subtle" style="margin:8px 0 0;">${workout.description}</p>
+          </div>
+          <label class="session-check">
+            <input type="checkbox" data-complete="${workout.id}" ${entry.completed ? 'checked' : ''} />
+            <strong>Count this workout toward the wager</strong>
+          </label>
+          <div class="exercise-list">${exerciseRows}</div>
+          <div class="session-notes field">
+            <label for="notes-${workout.id}">Session notes</label>
+            <textarea id="notes-${workout.id}" data-notes="${workout.id}" placeholder="Energy, pain, form, minimum session, wins…">${escapeHtml(entry.notes)}</textarea>
+          </div>
+        </article>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value);
+    }
+
+    function bindWorkoutEvents() {
+      document.querySelectorAll('[data-complete]').forEach(input => {
+        input.addEventListener('change', event => {
+          const id = event.target.dataset.complete;
+          state.entries[id].completed = event.target.checked;
+          saveState();
+          renderSelectedWeek();
+        });
+      });
+
+      document.querySelectorAll('[data-workout]').forEach(input => {
+        input.addEventListener('input', event => {
+          const id = event.target.dataset.workout;
+          const index = Number(event.target.dataset.index);
+          const field = event.target.dataset.field;
+          state.entries[id].exercises[index][field] = event.target.value;
+          saveState();
+        });
+      });
+
+      document.querySelectorAll('[data-notes]').forEach(textarea => {
+        textarea.addEventListener('input', event => {
+          state.entries[event.target.dataset.notes].notes = event.target.value;
+          saveState();
+        });
+      });
+    }
+
+    function completedCount() {
+      return Object.values(state.entries).filter(entry => entry.completed).length;
+    }
+
+    function perfectWeekStreak() {
+      let streak = 0;
+      for (const week of plan) {
+        const perfect = week.workouts.every(workout => state.entries[workout.id].completed);
+        if (perfect) streak += 1;
+        else break;
+      }
+      return streak;
+    }
+
+    function refreshSummary() {
+      const total = completedCount();
+      const percent = Math.round((total / 36) * 100);
+      document.getElementById('totalSessions').textContent = `${total} / 36`;
+      document.getElementById('totalProgress').style.width = `${percent}%`;
+      const streak = perfectWeekStreak();
+      document.getElementById('streakValue').textContent = `${streak} week${streak === 1 ? '' : 's'}`;
+
+      const selected = plan[state.selectedWeek - 1];
+      document.getElementById('currentWeekValue').textContent = `Week ${selected.number}`;
+      document.getElementById('currentWeekDates').textContent = `${formatDate(new Date(selected.start + 'T12:00:00'))}–${formatDate(new Date(selected.end + 'T12:00:00'))}`;
+
+      const thisWeekDone = selected.workouts.filter(w => state.entries[w.id].completed).length;
+      const wager = document.getElementById('wagerStatus');
+      wager.textContent = thisWeekDone === 3 ? 'Point secured' : `${thisWeekDone} of 3`;
+      wager.style.color = thisWeekDone === 3 ? 'var(--good)' : 'var(--text)';
+    }
+
+    function renderWeekStrip() {
+      const strip = document.getElementById('weekStrip');
+      strip.innerHTML = plan.map(week => {
+        const completed = week.workouts.map(w => state.entries[w.id].completed);
+        return `
+          <div class="week-cell ${week.number === state.selectedWeek ? 'current' : ''}">
+            <button type="button" data-open-week="${week.number}">
+              <strong>W${week.number}</strong>
+              <div class="tiny subtle">${week.workPattern.startsWith('Long') ? 'Long' : 'Short'}</div>
+              <div class="dots">${completed.map(done => `<span class="dot ${done ? 'done' : ''}"></span>`).join('')}</div>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      strip.querySelectorAll('[data-open-week]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.selectedWeek = Number(button.dataset.openWeek);
+          saveState();
+          switchView('plan');
+          renderSelectedWeek();
+        });
+      });
+    }
+
+    function allExerciseNames() {
+      const set = new Set();
+      for (const week of plan) {
+        for (const workout of week.workouts) {
+          workout.exercises.forEach(ex => {
+            if (!ex.cardio) set.add(ex.name);
+          });
+        }
+      }
+      return [...set];
+    }
+
+    function collectExerciseData(name) {
+      const points = [];
+      for (const week of plan) {
+        let best = null;
+        for (const workout of week.workouts) {
+          workout.exercises.forEach((ex, index) => {
+            if (ex.name === name) {
+              const value = Number(state.entries[workout.id].exercises[index]?.weight);
+              if (Number.isFinite(value) && value > 0) best = best === null ? value : Math.max(best, value);
+            }
+          });
+        }
+        points.push(best);
+      }
+      return points;
+    }
+
+    function renderProgressControls() {
+      const names = allExerciseNames();
+      const select = document.getElementById('chartExercise');
+      const current = select.value || 'Seated leg press';
+      select.innerHTML = names.map(name => `<option value="${escapeAttr(name)}">${name}</option>`).join('');
+      select.value = names.includes(current) ? current : names[0];
+      select.addEventListener('change', renderProgress);
+    }
+
+    function renderProgress() {
+      const select = document.getElementById('chartExercise');
+      if (!select.options.length) return;
+      const name = select.value;
+      const data = collectExerciseData(name);
+      const logged = data.map((value, index) => ({ value, week: index + 1 })).filter(point => point.value !== null);
+      const wrap = document.getElementById('chartWrap');
+
+      if (!logged.length) {
+        wrap.innerHTML = `<div class="chart-empty">Log a weight for <strong>${escapeHtml(name)}</strong> to start the visual trend.</div>`;
+      } else {
+        const width = 720;
+        const height = 260;
+        const pad = { left: 48, right: 18, top: 18, bottom: 38 };
+        const values = logged.map(p => p.value);
+        let min = Math.min(...values);
+        let max = Math.max(...values);
+        if (min === max) { min = Math.max(0, min - 10); max += 10; }
+        const x = week => pad.left + ((week - 1) / 11) * (width - pad.left - pad.right);
+        const y = value => pad.top + ((max - value) / (max - min)) * (height - pad.top - pad.bottom);
+        const path = logged.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.week).toFixed(1)} ${y(p.value).toFixed(1)}`).join(' ');
+        const ticks = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
+          const value = max - ratio * (max - min);
+          const yPos = pad.top + ratio * (height - pad.top - pad.bottom);
+          return `
+            <line x1="${pad.left}" y1="${yPos}" x2="${width - pad.right}" y2="${yPos}" stroke="var(--border)" stroke-width="1" />
+            <text x="${pad.left - 8}" y="${yPos + 4}" text-anchor="end" fill="var(--muted)" font-size="12">${Math.round(value)}</text>
+          `;
+        }).join('');
+        const weekLabels = [1, 3, 5, 7, 9, 11, 12].map(week => `<text x="${x(week)}" y="${height - 12}" text-anchor="middle" fill="var(--muted)" font-size="12">W${week}</text>`).join('');
+        const circles = logged.map(p => `
+          <circle cx="${x(p.week)}" cy="${y(p.value)}" r="5" fill="var(--accent)" />
+          <text x="${x(p.week)}" y="${y(p.value) - 10}" text-anchor="middle" fill="var(--text)" font-size="12" font-weight="700">${p.value}</text>
+        `).join('');
+
+        wrap.innerHTML = `
+          <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Top logged weight for ${escapeAttr(name)} across 12 weeks">
+            ${ticks}
+            <line x1="${pad.left}" y1="${height - pad.bottom}" x2="${width - pad.right}" y2="${height - pad.bottom}" stroke="var(--border)" stroke-width="1" />
+            ${weekLabels}
+            <path d="${path}" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+            ${circles}
+          </svg>
+        `;
+      }
+
+      const records = allExerciseNames().map(exercise => {
+        const values = collectExerciseData(exercise).filter(value => value !== null);
+        return { exercise, best: values.length ? Math.max(...values) : null };
+      }).sort((a, b) => (b.best || 0) - (a.best || 0));
+
+      document.getElementById('recordList').innerHTML = records.map(record => `
+        <div class="record">
+          <span class="small">${escapeHtml(record.exercise)}</span>
+          <strong>${record.best === null ? '—' : `${record.best} lb`}</strong>
+        </div>
+      `).join('');
+    }
+
+    function switchView(view) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.toggle('active', tab.dataset.view === view));
+      document.querySelectorAll('.view').forEach(section => section.classList.toggle('active', section.id === `view-${view}`));
+    }
+
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportCsv() {
+      const rows = [['Week', 'Date', 'Workout', 'Completed', 'Exercise', 'Sets', 'Weight_or_Minutes', 'Reps_or_Pattern', 'Notes']];
+      for (const week of plan) {
+        for (const workout of week.workouts) {
+          const entry = state.entries[workout.id];
+          workout.exercises.forEach((exercise, index) => {
+            const logged = entry.exercises[index];
+            rows.push([
+              week.number,
+              workout.date,
+              workout.name,
+              entry.completed ? 'Yes' : 'No',
+              exercise.name,
+              logged.sets,
+              logged.weight,
+              logged.reps,
+              entry.notes
+            ]);
+          });
+        }
+      }
+      const csv = rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
+      downloadFile('12-week-workout-data.csv', csv, 'text/csv');
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => switchView(tab.dataset.view));
+    });
+
+    document.getElementById('weekSelect').addEventListener('change', event => {
+      state.selectedWeek = Number(event.target.value);
+      saveState();
+      renderSelectedWeek();
+    });
+
+    document.getElementById('prevWeekBtn').addEventListener('click', () => {
+      state.selectedWeek = Math.max(1, state.selectedWeek - 1);
+      saveState();
+      renderSelectedWeek();
+    });
+
+    document.getElementById('nextWeekBtn').addEventListener('click', () => {
+      state.selectedWeek = Math.min(12, state.selectedWeek + 1);
+      saveState();
+      renderSelectedWeek();
+    });
+
+    document.getElementById('exportJsonBtn').addEventListener('click', () => {
+      downloadFile('12-week-workout-backup.json', JSON.stringify(state, null, 2), 'application/json');
+    });
+
+    document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+
+    document.getElementById('importFile').addEventListener('change', event => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+          state = loadState();
+          renderSelectedWeek();
+          renderWeekStrip();
+          renderProgress();
+          alert('Backup imported.');
+        } catch (error) {
+          alert('That file could not be imported.');
+        }
+      });
+      reader.readAsText(file);
+      event.target.value = '';
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      const confirmed = confirm('Reset every workout entry? This cannot be undone unless you exported a backup.');
+      if (!confirmed) return;
+      state = blankState();
+      saveState();
+      renderSelectedWeek();
+      renderProgress();
+    });
+
+    renderWeekSelect();
+    renderProgressControls();
+    renderSelectedWeek();
+    renderWeekStrip();
+    renderProgress();
+  </script>
+</body>
+</html>
